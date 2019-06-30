@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 
 //https://github.com/EduardoPires/Palestras/blob/master/JWT%20AspNetCore/DemoToken/Controllers/AuthController.cs
 
@@ -61,6 +62,31 @@ namespace JWTIdentity.Controllers
                 return Ok(await JwtMaker(model.Email));
             }
             return BadRequest("Usuário ou senha inválidos");
+        }
+
+        [HttpPost("recuperar-senha")]
+        public async Task<ActionResult> RecuperarSennha(RecuperarSenhaViewModel model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user != null)
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                return Ok(token);
+            }
+            return BadRequest();
+        }
+
+        [HttpGet("trocar-senha/{email}/{token}")]
+        public async Task<ActionResult> TrocarSenha(string email, string token)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user != null)
+            {
+                //TODO: adicionar decode no token
+                var result = await _userManager.ResetPasswordAsync(user, token, "novasenha");
+                return Ok(result);
+            }
+            return BadRequest();
         }
 
         private async Task<string> JwtMaker(string email)
